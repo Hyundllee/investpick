@@ -1,0 +1,11 @@
+@use 'sass:math';
+
+$design-width: 1920;
+$function-base-size: 16;
+
+@function __vw($size) {
+  $rem-size: math.div($size, $function-base-size) * 1rem;
+  $vw-size: math.div($size, $design-width) * 100vw;
+
+  @return max(#{$rem-size}, #{$vw-size});
+}

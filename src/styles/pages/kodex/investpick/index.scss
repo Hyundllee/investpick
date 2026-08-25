@@ -1,0 +1,122 @@
+@import "../../../utility/function.scss";
+
+/* =========================================================================
+ * 오늘의 투자픽 데모 페이지
+ * 실제 서비스 페이지가 아닌, 투표 컴포넌트 4종 + 목록 확인용 화면이다.
+ * ========================================================================= */
+
+/* common */
+.investpick-demo {
+  padding: __vw(60) 0 __vw(120);
+  background: #f1f2f5;
+
+  &__banner {
+    display: flex;
+    align-items: center;
+    gap: __vw(12);
+    width: __vw(1600);
+    margin: 0 auto __vw(40);
+    padding: __vw(16) __vw(24);
+    border-radius: __vw(10);
+    font-size: __vw(14);
+    font-weight: 400;
+
+    b {
+      font-weight: 700;
+    }
+
+    a {
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    &.is-mock {
+      background: #eef4ff;
+      color: #1454ff;
+    }
+
+    &.is-real {
+      background: #fdeeed;
+      color: #e8342a;
+    }
+  }
+
+  &__section {
+    width: __vw(1600);
+    margin: 0 auto;
+
+    & + & {
+      margin-top: __vw(80);
+    }
+  }
+
+  &__caption {
+    display: flex;
+    align-items: baseline;
+    gap: __vw(14);
+    margin-bottom: __vw(18);
+
+    h2 {
+      font-size: __vw(20);
+      font-weight: 700;
+      color: #111111;
+    }
+
+    p {
+      font-size: __vw(14);
+      font-weight: 400;
+      color: #888888;
+    }
+  }
+
+  &__stage {
+    padding: __vw(30);
+    border: __vw(1) dashed #d4d6dc;
+    border-radius: __vw(20);
+    background: #ffffff;
+
+    &.is-search {
+      display: flex;
+      justify-content: center;
+      background: #f6f7f9;
+    }
+
+    &.is-main {
+      background: #ffffff;
+    }
+
+    &.is-detail {
+      background: #f6f7f9;
+    }
+
+    &.is-popup {
+      display: flex;
+      justify-content: center;
+    }
+
+    &.is-list {
+      background: #f6f7f9;
+    }
+  }
+
+  &__search-box {
+    width: __vw(960);
+  }
+
+  &__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: __vw(56);
+    padding: 0 __vw(34);
+    border-radius: __vw(28);
+    background: #1454ff;
+    font-size: __vw(16);
+    font-weight: 600;
+    color: #ffffff;
+
+    &:hover {
+      background: #0f45d6;
+    }
+  }
+}
