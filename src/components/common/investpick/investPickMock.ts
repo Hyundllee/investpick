@@ -98,7 +98,7 @@ export const investPickMock = {
         { dayLabel: '금', cntA: 690, cntB: 510, pctA: 57, pctB: 43, today: false },
         { dayLabel: '월', cntA: 620, cntB: 480, pctA: 56, pctB: 44, today: false },
         { dayLabel: '화', cntA: 700, cntB: 420, pctA: 62, pctB: 38, today: false },
-        { dayLabel: '수', cntA: 520, cntB: 560, pctA: 48, pctB: 52, today: true },
+        { dayLabel: '수(오늘)', cntA: 520, cntB: 560, pctA: 48, pctB: 52, today: true },
         { dayLabel: '목', cntA: 0, cntB: 0, pctA: 0, pctB: 0, today: false },
         { dayLabel: '금', cntA: 0, cntB: 0, pctA: 0, pctB: 0, today: false },
       ],

@@ -20,7 +20,8 @@ const TREND_SLIDER_THRESHOLD = 7
 const TREND_SLIDER_VISIBLE_COUNT = 5
 
 /** 일별 추이 한 칸(막대 또는 데이터 없음 아이콘 + 라벨). 정적 나열/슬라이드 두 모드에서 공통으로 쓴다. */
-function DailyChartColumn({ item, isToday, hasData, maxPct }: { item: InvestPickDaily; isToday: boolean; hasData: boolean; maxPct: number }) {
+// dayLabel 은 백엔드가 today 항목에 "(오늘)"까지 포함해서 내려준다. 프론트에서 별도로 붙이지 않는다.
+function DailyChartColumn({ item, hasData, maxPct }: { item: InvestPickDaily; hasData: boolean; maxPct: number }) {
   return (
     <>
       {hasData ? (
@@ -37,7 +38,7 @@ function DailyChartColumn({ item, isToday, hasData, maxPct }: { item: InvestPick
           <ReactSVG wrapper="span" src={`${ICON_BASE}/no-data-img.svg`} />
         </div>
       )}
-      <span className="investpick-popup__chart-label">{isToday ? `${item.dayLabel}(오늘)` : item.dayLabel}</span>
+      <span className="investpick-popup__chart-label">{item.dayLabel}</span>
     </>
   )
 }
@@ -221,7 +222,7 @@ export default function InvestPickResultPopup({
                     >
                       {daily.map((item, index) => (
                         <SwiperSlide key={`${item.dayLabel}-${index}`} className={index === todayIndex ? 'is-today' : ''}>
-                          <DailyChartColumn item={item} isToday={index === todayIndex} hasData={index <= todayIndex} maxPct={maxPct} />
+                          <DailyChartColumn item={item} hasData={index <= todayIndex} maxPct={maxPct} />
                         </SwiperSlide>
                       ))}
                     </Swiper>
@@ -240,7 +241,7 @@ export default function InvestPickResultPopup({
                   <ul className="investpick-popup__chart">
                     {daily.map((item, index) => (
                       <li key={`${item.dayLabel}-${index}`} className={index === todayIndex ? 'is-today' : ''}>
-                        <DailyChartColumn item={item} isToday={index === todayIndex} hasData={index <= todayIndex} maxPct={maxPct} />
+                        <DailyChartColumn item={item} hasData={index <= todayIndex} maxPct={maxPct} />
                       </li>
                     ))}
                   </ul>
