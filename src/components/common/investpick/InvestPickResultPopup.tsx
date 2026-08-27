@@ -10,6 +10,11 @@ import '../../../styles/common/components/investpick/index.scss'
 
 const ICON_BASE = '/assets/images/kodex/common/investpick'
 
+/** 일별 추이가 이 개수 이상이면 전체 나열 대신 화살표로 넘기는 슬라이드 형태로 전환한다. */
+const TREND_SLIDER_THRESHOLD = 7
+/** 슬라이드 모드에서 한 화면에 보이는 컬럼 수. */
+const TREND_SLIDER_VISIBLE_COUNT = 5
+
 /**
  * ETF 상세 페이지 URL 규칙.
  * TODO: 실제 서비스 URL 규칙 확인 후 교체하거나 getProductUrl prop 으로 주입한다.
@@ -46,6 +51,7 @@ export default function InvestPickResultPopup({
   const [detail, setDetail] = useState<InvestPickTopicDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [slideIndex, setSlideIndex] = useState(0)
 
   useEffect(() => {
     if (!open || !topicSeq) return undefined
@@ -53,6 +59,7 @@ export default function InvestPickResultPopup({
     const controller = new AbortController()
     setLoading(true)
     setError(null)
+    setSlideIndex(0)
 
     fetchInvestPickTopicDetail(topicSeq, controller.signal)
       .then((data) => setDetail(data))
@@ -68,8 +75,15 @@ export default function InvestPickResultPopup({
   }, [open, topicSeq])
 
   const daily = detail?.daily ?? []
-  const maxPct = daily.reduce((max, item) => Math.max(max, item.pctA, item.pctB), 0) || 100
-  const lastIndex = daily.length - 1
+  const todayIndexFound = daily.findIndex((item) => item.today)
+  const todayIndex = todayIndexFound === -1 ? daily.length - 1 : todayIndexFound
+  const dataDaily = daily.slice(0, todayIndex + 1)
+  const maxPct = dataDaily.reduce((max, item) => Math.max(max, item.pctA, item.pctB), 0) || 100
+
+  const isTrendSlider = daily.length >= TREND_SLIDER_THRESHOLD
+  const maxSlideIndex = Math.max(0, daily.length - TREND_SLIDER_VISIBLE_COUNT)
+  const canSlidePrev = isTrendSlider && slideIndex > 0
+  const canSlideNext = isTrendSlider && slideIndex < maxSlideIndex
 
   const pickedPct = detail ? (detail.choice === 'B' ? detail.pctB : detail.pctA) : 0
   const isMajority = detail ? pickedPct >= 50 : true
@@ -154,26 +168,75 @@ export default function InvestPickResultPopup({
                   <h4>이번 주 민심 추이 (일별)</h4>
                   {trendNote && <p>{trendNote}</p>}
                 </div>
-                <ul className="investpick-popup__chart">
-                  {daily.map((item, index) => {
-                    const isToday = index === lastIndex
-                    return (
-                      <li key={`${item.dayLabel}-${index}`} className={isToday ? 'is-today' : ''}>
-                        <div className="investpick-popup__chart-bars">
-                          <span className="investpick-popup__chart-bar is-a" style={{ height: `${(item.pctA / maxPct) * 100}%` }}>
-                            {isToday && <em>{item.pctA}%</em>}
-                          </span>
-                          <span className="investpick-popup__chart-bar is-b" style={{ height: `${(item.pctB / maxPct) * 100}%` }}>
-                            {isToday && <em>{item.pctB}%</em>}
-                          </span>
-                        </div>
-                        <span className="investpick-popup__chart-label">
-                          {isToday ? `${item.dayLabel}(오늘)` : item.dayLabel}
-                        </span>
-                      </li>
-                    )
-                  })}
-                </ul>
+
+                <div className={`investpick-popup__chart-wrap ${isTrendSlider ? 'is-slider' : ''}`}>
+                  {isTrendSlider && (
+                    <button
+                      type="button"
+                      className="investpick-popup__chart-arrow is-prev"
+                      onClick={() => setSlideIndex((index) => Math.max(0, index - 1))}
+                      disabled={!canSlidePrev}
+                      aria-label="이전 날짜"
+                    >
+                      <ReactSVG wrapper="span" src={`${ICON_BASE}/icon-slide-left.svg`} />
+                    </button>
+                  )}
+
+                  <div className="investpick-popup__chart-viewport">
+                    <ul
+                      className="investpick-popup__chart"
+                      style={
+                        isTrendSlider
+                          ? { transform: `translateX(-${slideIndex * (100 / TREND_SLIDER_VISIBLE_COUNT)}%)` }
+                          : undefined
+                      }
+                    >
+                      {daily.map((item, index) => {
+                        const isToday = index === todayIndex
+                        const hasData = index <= todayIndex
+                        return (
+                          <li key={`${item.dayLabel}-${index}`} className={isToday ? 'is-today' : ''}>
+                            {hasData ? (
+                              <div className="investpick-popup__chart-bars">
+                                <span
+                                  className="investpick-popup__chart-bar is-a"
+                                  style={{ height: `${(item.pctA / maxPct) * 100}%` }}
+                                >
+                                  <em>{item.pctA}%</em>
+                                </span>
+                                <span
+                                  className="investpick-popup__chart-bar is-b"
+                                  style={{ height: `${(item.pctB / maxPct) * 100}%` }}
+                                >
+                                  <em>{item.pctB}%</em>
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="investpick-popup__chart-empty">
+                                <ReactSVG wrapper="span" src={`${ICON_BASE}/no-data-img.svg`} />
+                              </div>
+                            )}
+                            <span className="investpick-popup__chart-label">
+                              {isToday ? `${item.dayLabel}(오늘)` : item.dayLabel}
+                            </span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+
+                  {isTrendSlider && (
+                    <button
+                      type="button"
+                      className="investpick-popup__chart-arrow is-next"
+                      onClick={() => setSlideIndex((index) => Math.min(maxSlideIndex, index + 1))}
+                      disabled={!canSlideNext}
+                      aria-label="다음 날짜"
+                    >
+                      <ReactSVG wrapper="span" src={`${ICON_BASE}/icon-slide-right.svg`} />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 

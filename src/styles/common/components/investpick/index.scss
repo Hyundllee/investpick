@@ -645,10 +645,52 @@
     }
   }
 
+  &__chart-wrap {
+    display: flex;
+    align-items: center;
+    gap: __vw(4);
+    margin-top: __vw(40);
+
+    // 슬라이드 모드(daily 7개 이상)에서는 컬럼 폭을 고정해서 한 화면에 5개만 보이게 하고
+    // 나머지는 __chart-viewport 의 overflow:hidden 밖으로 밀어낸다.
+    // 100% / TREND_SLIDER_VISIBLE_COUNT(InvestPickResultPopup.tsx) 와 값을 맞춰야 한다.
+    &.is-slider .investpick-popup__chart > li {
+      flex: 0 0 20%;
+    }
+  }
+
+  &__chart-viewport {
+    flex: 1 1 auto;
+    min-width: 0;
+    // 막대 위 %는 막대 높이 기준 absolute(bottom:100%)라, 100% 높이 막대는 라벨이
+    // 뷰포트 상단 밖으로 튀어나간다. overflow:hidden(가로 슬라이드 클리핑용)에
+    // 잘리지 않도록 라벨 높이만큼 위쪽 여백을 미리 확보해둔다.
+    padding-top: __vw(40);
+    overflow: hidden;
+  }
+
+  &__chart-arrow {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: __vw(30);
+    height: __vw(30);
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
   &__chart {
     display: flex;
     align-items: flex-end;
-    margin-top: __vw(40);
+    transition: transform 0.3s ease;
 
     > li {
       display: flex;
@@ -662,6 +704,24 @@
           color: #111111;
         }
       }
+    }
+  }
+
+  &__chart-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: __vw(120);
+    border-bottom: __vw(1) solid #e0e1e5;
+
+    span {
+      display: flex;
+    }
+
+    svg {
+      width: __vw(40);
+      height: __vw(40);
     }
   }
 

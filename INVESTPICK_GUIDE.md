@@ -72,7 +72,7 @@ GET /api/v1/kodex/insight/topics
 
 | 응답 필드 | 설명 |
 | --- | --- |
-| `totalCnt` | 리스트 전체 개수 |
+| `totcnt` | 리스트 전체 개수 |
 | `list[].topicSeq` | 투자픽 일련번호 |
 | `list[].roundNm` | 주차정보 (ex. `8월2주차`) |
 | `list[].title` | 타이틀 |
@@ -224,6 +224,13 @@ import { InvestPickResultPopup } from '@/components/common/investpick'
 ```tsx
 import { InvestPickList } from '@/components/common/investpick'
 
+<InvestPickList pageRows={4} />
+```
+
+행을 클릭하면 기본적으로 해당 `topicSeq`의 결과 팝업(`InvestPickResultPopup`)이 열린다.
+`onSelect`를 넘기면 그 동작을 대체한다 (팝업을 직접 열고 싶지 않을 때, 예: 상세 페이지로 이동).
+
+```tsx
 <InvestPickList pageRows={4} onSelect={(row) => console.log(row.topicSeq)} />
 ```
 

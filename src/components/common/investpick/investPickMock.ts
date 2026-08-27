@@ -91,19 +91,23 @@ export const investPickMock = {
       fidA: TOPIC.fidA,
       fidB: TOPIC.fidB,
       choice: choice ?? 'A',
+      // 8개(슬라이드 동작 확인용) + 오늘(수) 이후인 목/금은 아직 데이터가 없는 상태로 구성
       daily: [
-        { dayLabel: '월', cntA: 620, cntB: 480, pctA: 56, pctB: 44 },
-        { dayLabel: '화', cntA: 700, cntB: 420, pctA: 62, pctB: 38 },
-        { dayLabel: '수', cntA: 520, cntB: 560, pctA: 48, pctB: 52 },
-        { dayLabel: '목', cntA: 640, cntB: 500, pctA: 56, pctB: 44 },
-        { dayLabel: '금', cntA: 725, cntB: 523, pctA: 58, pctB: 42 },
+        { dayLabel: '수', cntA: 610, cntB: 470, pctA: 56, pctB: 44, today: false },
+        { dayLabel: '목', cntA: 580, cntB: 460, pctA: 56, pctB: 44, today: false },
+        { dayLabel: '금', cntA: 690, cntB: 510, pctA: 57, pctB: 43, today: false },
+        { dayLabel: '월', cntA: 620, cntB: 480, pctA: 56, pctB: 44, today: false },
+        { dayLabel: '화', cntA: 700, cntB: 420, pctA: 62, pctB: 38, today: false },
+        { dayLabel: '수', cntA: 520, cntB: 560, pctA: 48, pctB: 52, today: true },
+        { dayLabel: '목', cntA: 0, cntB: 0, pctA: 0, pctB: 0, today: false },
+        { dayLabel: '금', cntA: 0, cntB: 0, pctA: 0, pctB: 0, today: false },
       ],
     })
   },
 
   topics({ pageNo = 1, pageRows = 6 }: InvestPickTopicsParams = {}): Promise<InvestPickTopicsResponse> {
     const start = (pageNo - 1) * pageRows
-    return delay({ totalCnt: 24, list: LIST.slice(start, start + pageRows) })
+    return delay({ totcnt: 24, list: LIST.slice(start, start + pageRows) })
   },
 
   vote(topicSeq: string | number, picked: InvestPickChoice): Promise<InvestPickVoteResponse> {

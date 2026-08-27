@@ -47,7 +47,7 @@ export type InvestPickTopicSummary = {
 /** 목록 API 응답 */
 export type InvestPickTopicsResponse = {
   /** 리스트 전체 개수 */
-  totalCnt: number
+  totcnt: number
   list: InvestPickTopicSummary[]
 }
 
@@ -65,6 +65,8 @@ export type InvestPickDaily = {
   pctA: number
   /** 답변B 퍼센트 */
   pctB: number
+  /** 오늘 여부. true인 항목 이후(미래) 항목은 아직 투표 데이터가 없는 날이다. */
+  today: boolean
 }
 
 /** GET /api/v1/kodex/insight/topic/{topicSeq}.do 응답 */
