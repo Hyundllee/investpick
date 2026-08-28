@@ -14,7 +14,10 @@
   &__inner {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    // center로 두면 head(라벨+타이틀 2줄) 기준 세로 중앙이라 meta(공유하기 등)가
+    // 라벨과 타이틀 사이 어중간한 위치에 뜬다. head 의 마지막 줄인 타이틀과 맞도록
+    // 하단 기준으로 정렬한다.
+    align-items: flex-end;
     width: 100%;
   }
 

@@ -97,7 +97,7 @@ module.exports = (_env, argv) => {
     performance: { hints: false },
 
     devServer: {
-      port: 3001,
+      port: 3000,
       hot: true,
       open: false,
       historyApiFallback: true,
