@@ -19,8 +19,39 @@ const TREND_SLIDER_THRESHOLD = 7
 /** 슬라이드 모드에서 한 화면에 보이는 컬럼 수. */
 const TREND_SLIDER_VISIBLE_COUNT = 5
 
+/** voteYmd(예: "20260826") 에서 월/일만 뽑는다. 형식이 다르면 원본을 그대로 돌려준다. */
+function extractMonthDay(voteYmd: string): { month: number; day: number } | null {
+  const str = String(voteYmd)
+  if (str.length !== 8) return null
+  return { month: Number(str.slice(4, 6)), day: Number(str.slice(6, 8)) }
+}
+
+/** 일별 추이 라벨. ex) "8/27 (월)", "8/28 (금) 오늘" */
+function formatDailyLabel(item: InvestPickDaily): string {
+  const md = extractMonthDay(item.voteYmd)
+  const datePart = md ? `${md.month}/${md.day} ` : ''
+  return `${datePart}(${item.dayLabel})${item.today ? ' 오늘' : ''}`
+}
+
+/** voteYmd(예: "20260826") → "2026.08.26" */
+function formatYmdDots(voteYmd: string | undefined): string {
+  const str = String(voteYmd ?? '')
+  if (str.length !== 8) return str
+  return `${str.slice(0, 4)}.${str.slice(4, 6)}.${str.slice(6, 8)}`
+}
+
+/**
+ * 상품명 등 텍스트에 HTML 엔티티(&amp; 등)가 그대로 내려오는 경우를 위한 안전한 디코딩.
+ * <textarea> 는 innerHTML 을 넣어도 스크립트를 실행하지 않고 엔티티만 해석하므로 안전하다.
+ */
+function decodeHtmlEntities(text: string): string {
+  if (typeof document === 'undefined') return text
+  const el = document.createElement('textarea')
+  el.innerHTML = text
+  return el.value
+}
+
 /** 일별 추이 한 칸(막대 또는 데이터 없음 아이콘 + 라벨). 정적 나열/슬라이드 두 모드에서 공통으로 쓴다. */
-// dayLabel 은 백엔드가 today 항목에 "(오늘)"까지 포함해서 내려준다. 프론트에서 별도로 붙이지 않는다.
 function DailyChartColumn({ item, hasData, maxPct }: { item: InvestPickDaily; hasData: boolean; maxPct: number }) {
   return (
     <>
@@ -38,7 +69,7 @@ function DailyChartColumn({ item, hasData, maxPct }: { item: InvestPickDaily; ha
           <ReactSVG wrapper="span" src={`${ICON_BASE}/no-data-img.svg`} />
         </div>
       )}
-      <span className="investpick-popup__chart-label">{item.dayLabel}</span>
+      <span className="investpick-popup__chart-label">{formatDailyLabel(item)}</span>
     </>
   )
 }
@@ -105,10 +136,17 @@ export default function InvestPickResultPopup({
 
   const daily = detail?.daily ?? []
   const todayIndex = daily.findIndex((item) => item.today)
-  const dataDaily = daily.slice(0, todayIndex + 1)
-  const maxPct = dataDaily.reduce((max, item) => Math.max(max, item.pctA, item.pctB), 0) || 100
+  const availableDaily = daily.filter((item) => item.available)
+  const maxPct = availableDaily.reduce((max, item) => Math.max(max, item.pctA, item.pctB), 0) || 100
 
   const isTrendSlider = daily.length >= TREND_SLIDER_THRESHOLD
+  // 슬라이드 첫 노출 시 오늘이 맨 앞에 오도록 하되, 오늘이 뒤쪽에 몰려 있어 화면 끝에
+  // 공백 칸이 생기는 경우(ex. 투표기간 마지막 날이 오늘인 경우)엔 꽉 채워지도록 당겨온다.
+  const maxStartIndex = Math.max(0, daily.length - TREND_SLIDER_VISIBLE_COUNT)
+  const initialSlideIndex = Math.min(Math.max(todayIndex, 0), maxStartIndex)
+
+  // 응답은 대문자로 내려온다(InvestPickStatus)고 하나, 표기 방어를 위해 대소문자 무관하게 비교한다.
+  const isEnded = (detail?.status ?? '').toString().toUpperCase() === 'ENDED'
 
   const pickedPct = detail ? (detail.choice === 'B' ? detail.pctB : detail.pctA) : 0
   const isMajority = detail ? pickedPct >= 50 : true
@@ -134,18 +172,44 @@ export default function InvestPickResultPopup({
           <>
             {/* head */}
             <div className="investpick-popup__head">
-              <span className="investpick-popup__label">{label}</span>
+              <div className="investpick-popup__label-row">
+                <span className="investpick-popup__label">{label}</span>
+                {isEnded && (
+                  <>
+                    <span className="investpick-popup__badge">{detail.roundNm}</span>
+                    <span className="investpick-popup__badge is-ended">종료</span>
+                  </>
+                )}
+              </div>
               <h3 className="investpick-popup__title">{headline}</h3>
               <p className="investpick-popup__summary">
-                <span className="investpick-popup__summary-item">
-                  이번 주 설문 <b>{`${detail.optionA} vs ${detail.optionB}`}</b>
-                </span>
-                <span className="investpick-popup__summary-bar" aria-hidden="true" />
-                <span className="investpick-popup__summary-item is-point">
-                  오늘 {formatCount(detail.voteTodayCnt)}명 참여
-                </span>
-                <span className="investpick-popup__summary-bar" aria-hidden="true" />
-                <span className="investpick-popup__summary-item">매일 1회 투표 가능</span>
+                {isEnded ? (
+                  <>
+                    <span className="investpick-popup__summary-item">
+                      설문주제 <b>{`${detail.optionA} vs ${detail.optionB}`}</b>
+                    </span>
+                    <span className="investpick-popup__summary-bar" aria-hidden="true" />
+                    <span className="investpick-popup__summary-item is-point">
+                      최종 {formatCount(detail.voteTotalCnt)}명
+                    </span>
+                    <span className="investpick-popup__summary-bar" aria-hidden="true" />
+                    <span className="investpick-popup__summary-item">
+                      {formatYmdDots(daily[0]?.voteYmd)} ~ {formatYmdDots(daily[daily.length - 1]?.voteYmd)}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="investpick-popup__summary-item">
+                      이번 주 설문 <b>{`${detail.optionA} vs ${detail.optionB}`}</b>
+                    </span>
+                    <span className="investpick-popup__summary-bar" aria-hidden="true" />
+                    <span className="investpick-popup__summary-item is-point">
+                      오늘 {formatCount(detail.voteTodayCnt)}명 참여
+                    </span>
+                    <span className="investpick-popup__summary-bar" aria-hidden="true" />
+                    <span className="investpick-popup__summary-item">매일 1회 투표 가능</span>
+                  </>
+                )}
               </p>
             </div>
 
@@ -171,26 +235,37 @@ export default function InvestPickResultPopup({
               </div>
             </div>
 
-            {/* callout */}
-            {detail.choice && (
-              <p className="investpick-popup__callout">
-                <span className="investpick-popup__callout-icon" aria-hidden="true">
-                  📢
-                </span>
-                <b>{isMajority ? '당신은 다수파!' : '당신은 소수파!'}</b>
-                <span>
-                  {isMajority
-                    ? `오늘 투표한 개미 ${pickedPct}%가 같은 픽을 골랐어요`
-                    : `오늘 투표한 개미 ${pickedPct}%만 같은 픽을 골랐어요`}
-                </span>
-              </p>
-            )}
+            {/* callout: 종료된 설문은 투표 참여 여지가 없으므로 노출하지 않는다 */}
+            {!isEnded &&
+              (detail.canVote ? (
+                <div className="investpick-popup__cta">
+                  <span>설문 참여 후 내 민심을 확인 해보세요</span>
+                  <button type="button" className="investpick-popup__cta-button" onClick={onClose}>
+                    설문 참여하기
+                    <ReactSVG wrapper="span" src={`${ICON_BASE}/icon-detail-arrow.svg`} />
+                  </button>
+                </div>
+              ) : (
+                detail.choice && (
+                  <p className="investpick-popup__callout">
+                    <span className="investpick-popup__callout-icon" aria-hidden="true">
+                      <ReactSVG wrapper="span" src={`${ICON_BASE}/icon-speaker-${isMajority ? 'blue' : 'red'}.svg`} />
+                    </span>
+                    <b>{isMajority ? '당신은 다수파!' : '당신은 소수파!'}</b>
+                    <span>
+                      {isMajority
+                        ? `오늘 투표한 개미 ${pickedPct}%가 같은 픽을 골랐어요`
+                        : `오늘 투표한 개미 ${pickedPct}%만 같은 픽을 골랐어요`}
+                    </span>
+                  </p>
+                )
+              ))}
 
             {/* trend */}
             {daily.length > 0 && (
               <div className="investpick-popup__trend">
                 <div className="investpick-popup__trend-head">
-                  <h4>이번 주 민심 추이 (일별)</h4>
+                  <h4>일일 민심 추이</h4>
                   {trendNote && <p>{trendNote}</p>}
                 </div>
 
@@ -210,6 +285,7 @@ export default function InvestPickResultPopup({
                       key={detail.topicSeq}
                       className="investpick-popup__chart-swiper"
                       slidesPerView={TREND_SLIDER_VISIBLE_COUNT}
+                      initialSlide={initialSlideIndex}
                       onSwiper={(swiper) => {
                         swiperRef.current = swiper
                         setCanSlidePrev(!swiper.isBeginning)
@@ -222,7 +298,7 @@ export default function InvestPickResultPopup({
                     >
                       {daily.map((item, index) => (
                         <SwiperSlide key={`${item.dayLabel}-${index}`} className={index === todayIndex ? 'is-today' : ''}>
-                          <DailyChartColumn item={item} hasData={index <= todayIndex} maxPct={maxPct} />
+                          <DailyChartColumn item={item} hasData={item.available} maxPct={maxPct} />
                         </SwiperSlide>
                       ))}
                     </Swiper>
@@ -241,7 +317,7 @@ export default function InvestPickResultPopup({
                   <ul className="investpick-popup__chart">
                     {daily.map((item, index) => (
                       <li key={`${item.dayLabel}-${index}`} className={index === todayIndex ? 'is-today' : ''}>
-                        <DailyChartColumn item={item} hasData={index <= todayIndex} maxPct={maxPct} />
+                        <DailyChartColumn item={item} hasData={item.available} maxPct={maxPct} />
                       </li>
                     ))}
                   </ul>
@@ -258,10 +334,10 @@ export default function InvestPickResultPopup({
             {/* links */}
             <div className="investpick-popup__links">
               <a className="investpick-popup__link is-primary" href={getProductUrl(detail.fidA, detail.prodNmA)}>
-                {detail.prodNmA} 상세보기
+                {decodeHtmlEntities(detail.prodNmA)} 상세보기
               </a>
               <a className="investpick-popup__link" href={getProductUrl(detail.fidB, detail.prodNmB)}>
-                {detail.prodNmB} 상세보기
+                {decodeHtmlEntities(detail.prodNmB)} 상세보기
               </a>
             </div>
           </>

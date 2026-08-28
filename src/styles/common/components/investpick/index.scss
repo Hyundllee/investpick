@@ -500,10 +500,33 @@
     gap: __vw(8);
   }
 
+  &__label-row {
+    display: flex;
+    align-items: center;
+    gap: __vw(8);
+  }
+
   &__label {
     font-size: __vw(14);
     font-weight: 600;
     color: #1454ff;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 __vw(10);
+    height: __vw(24);
+    border-radius: __vw(12);
+    background: #eef4ff;
+    font-size: __vw(13);
+    font-weight: 600;
+    color: #1454ff;
+
+    &.is-ended {
+      background: #ededef;
+      color: #888888;
+    }
   }
 
   &__title {
@@ -619,9 +642,60 @@
     }
 
     &-icon {
+      display: flex;
       flex: 0 0 auto;
-      font-size: __vw(20);
-      line-height: 1;
+
+      > span {
+        display: flex;
+      }
+
+      svg {
+        width: __vw(24);
+        height: auto;
+      }
+    }
+  }
+
+  /* cta: 미투표 상태(canVote) 안내 박스 ----------------------------------- */
+  &__cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: __vw(16);
+    margin-top: __vw(24);
+    padding: __vw(22) __vw(26);
+    border-radius: __vw(12);
+    background: #f4f5f7;
+    font-size: __vw(15);
+    font-weight: 400;
+    color: #333333;
+  }
+
+  &__cta-button {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: __vw(8);
+    height: __vw(38);
+    padding: 0 __vw(18);
+    border: __vw(1) solid #d9dbe0;
+    border-radius: __vw(19);
+    background: #ffffff;
+    font-size: __vw(14);
+    font-weight: 600;
+    color: #111111;
+
+    &:hover {
+      border-color: #111111;
+    }
+
+    svg {
+      width: __vw(6);
+      height: __vw(10);
+
+      path {
+        stroke: #111111;
+      }
     }
   }
 

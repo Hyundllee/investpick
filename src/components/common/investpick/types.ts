@@ -65,8 +65,12 @@ export type InvestPickDaily = {
   pctA: number
   /** 답변B 퍼센트 */
   pctB: number
-  /** 오늘 여부. true인 항목 이후(미래) 항목은 아직 투표 데이터가 없는 날이다. */
+  /** 오늘 여부 */
   today: boolean
+  /** 차트 노출 여부. true: 차트 노출, false: 데이터 없음(? 아이콘) */
+  available: boolean
+  /** 투표 날짜 (ex. 20260826) */
+  voteYmd: string
 }
 
 /** GET /api/v1/kodex/insight/topic/{topicSeq}.do 응답 */
@@ -102,6 +106,10 @@ export type InvestPickTopicDetail = {
   fidB: string
   /** 접속한 사람이 선택한 답변 (미투표 시 null) */
   choice: InvestPickChoice | null
+  /** 투표가능여부. true: 가능, false: 불가능 */
+  canVote: boolean
+  /** 진행상태 */
+  status: InvestPickStatus
   /** 일자별 투표율 */
   daily: InvestPickDaily[]
 }
