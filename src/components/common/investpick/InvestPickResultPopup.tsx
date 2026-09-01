@@ -134,6 +134,10 @@ export default function InvestPickResultPopup({
     return () => controller.abort()
   }, [open, topicSeq])
 
+  useEffect(() => {
+    if (error) onClose()
+  }, [error, onClose])
+
   const daily = detail?.daily ?? []
   const todayIndex = daily.findIndex((item) => item.today)
   const availableDaily = daily.filter((item) => item.available)
@@ -162,11 +166,6 @@ export default function InvestPickResultPopup({
     >
       <div className="investpick-popup">
         {loading && <p className="investpick-popup__state">불러오는 중입니다.</p>}
-        {!loading && error && (
-          <p className="investpick-popup__state" role="alert">
-            {error}
-          </p>
-        )}
 
         {!loading && !error && detail && (
           <>

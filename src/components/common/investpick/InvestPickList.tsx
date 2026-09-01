@@ -73,6 +73,8 @@ export default function InvestPickList({
     setPopupTopicSeq(row.topicSeq)
   }
 
+  if (error) return null
+
   return (
     <section className={`investpick-list ${className}`}>
       {/* head */}
@@ -121,12 +123,7 @@ export default function InvestPickList({
         })}
       </ul>
 
-      {!loading && !error && rows.length === 0 && <p className="investpick-list__state">등록된 설문이 없습니다.</p>}
-      {error && (
-        <p className="investpick-list__state" role="alert">
-          {error}
-        </p>
-      )}
+      {!loading && rows.length === 0 && <p className="investpick-list__state">등록된 설문이 없습니다.</p>}
 
       {/* caution */}
       <p className="investpick-list__caution">

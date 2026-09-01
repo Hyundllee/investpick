@@ -49,7 +49,7 @@ export default function InvestPickVote({
   onShare,
   className = '',
 }: InvestPickVoteProps) {
-  const { phase, topic, error, voting, voteMessage, voted, vote, clearVoteMessage } = useInvestPick()
+  const { phase, topic, voting, voteMessage, voted, vote, clearVoteMessage } = useInvestPick()
   const [popupOpen, setPopupOpen] = useState(false)
 
   const withLabel = showLabel ?? variant !== 'main'
@@ -59,11 +59,7 @@ export default function InvestPickVote({
   }
 
   if (phase === 'error' || !topic) {
-    return (
-      <div className={`investpick investpick--${variant} is-error ${className}`} role="status">
-        <p className="investpick__empty">{error ?? '투자픽 정보를 불러오지 못했습니다.'}</p>
-      </div>
-    )
+    return null
   }
 
   const options = [
