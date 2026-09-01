@@ -9,6 +9,32 @@
 import { fetchInvestPickActiveTopic, requestInvestPickVote } from './api'
 import type { InvestPickActiveTopic, InvestPickChoice } from './types'
 
+/**
+ * 새로고침 후 activeTopic 을 다시 조회하면 canVote 는 false 로 잘 내려오는데
+ * choice 는 null 로 내려오는 경우가 있어(백엔드가 "이미 투표함"만 기억하고
+ * "무엇을 골랐는지"는 세션에 안 실어주는 케이스), 화면에서 내가 고른 답이
+ * 사라져 보이는 문제가 있다. 투표 성공 시 topicSeq 별로 choice 를 로컬에
+ * 남겨뒀다가, 서버가 choice 를 못 내려줄 때 이걸로 보완한다.
+ */
+const CHOICE_STORAGE_PREFIX = 'investpick:choice:'
+
+function saveLocalChoice(topicSeq: string, choice: InvestPickChoice) {
+  try {
+    window.localStorage.setItem(`${CHOICE_STORAGE_PREFIX}${topicSeq}`, choice)
+  } catch {
+    // 시크릿 모드 등 localStorage 사용 불가 환경 - 무시
+  }
+}
+
+function readLocalChoice(topicSeq: string): InvestPickChoice | null {
+  try {
+    const value = window.localStorage.getItem(`${CHOICE_STORAGE_PREFIX}${topicSeq}`)
+    return value === 'A' || value === 'B' ? value : null
+  } catch {
+    return null
+  }
+}
+
 export type InvestPickPhase = 'idle' | 'loading' | 'ready' | 'error'
 
 export type InvestPickState = {
@@ -60,7 +86,8 @@ export function loadActiveTopic(force = false): Promise<void> {
 
   inflight = fetchInvestPickActiveTopic()
     .then((topic) => {
-      setState({ phase: 'ready', topic, error: null })
+      const choice = topic.choice ?? (topic.canVote === false ? readLocalChoice(topic.topicSeq) : null)
+      setState({ phase: 'ready', topic: { ...topic, choice }, error: null })
     })
     .catch((error: unknown) => {
       const message = error instanceof Error ? error.message : '투자픽 정보를 불러오지 못했습니다.'
@@ -87,6 +114,8 @@ export async function submitVote(choice: InvestPickChoice): Promise<boolean> {
       setState({ voting: false, voteMessage: result.message ?? '투표에 실패했습니다.' })
       return false
     }
+
+    saveLocalChoice(current.topicSeq, result.choice)
 
     setState({
       voting: false,
