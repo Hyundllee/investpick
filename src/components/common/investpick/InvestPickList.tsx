@@ -73,7 +73,7 @@ export default function InvestPickList({
     setPopupTopicSeq(row.topicSeq)
   }
 
-  if (error) return null
+  if (error && rows.length === 0) return null
 
   return (
     <section className={`investpick-list ${className}`}>

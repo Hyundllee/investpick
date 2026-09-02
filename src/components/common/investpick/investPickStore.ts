@@ -132,9 +132,8 @@ export async function submitVote(choice: InvestPickChoice): Promise<boolean> {
       },
     })
     return true
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : '투표에 실패했습니다.'
-    setState({ voting: false, voteMessage: message })
+  } catch {
+    setState({ voting: false, voteMessage: null })
     return false
   }
 }
