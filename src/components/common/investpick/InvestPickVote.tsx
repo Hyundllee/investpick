@@ -49,7 +49,7 @@ export default function InvestPickVote({
   onShare,
   className = '',
 }: InvestPickVoteProps) {
-  const { phase, topic, voting, voteMessage, voted, vote, clearVoteMessage } = useInvestPick()
+  const { phase, topic, voting, voteMessage, voted, justVoted, vote, clearVoteMessage } = useInvestPick()
   const [popupOpen, setPopupOpen] = useState(false)
 
   const withLabel = showLabel ?? variant !== 'main'
@@ -112,7 +112,7 @@ export default function InvestPickVote({
           <div className="investpick__options">
             {options.map(({ key, text, pct }) => {
               const isPicked = topic.choice === key
-              const tone = voted ? (isPicked ? (key === 'A' ? 'blue' : 'red') : 'gray') : key === 'A' ? 'blue' : 'red'
+              const tone = voted && justVoted && !isPicked ? 'gray' : key === 'A' ? 'blue' : 'red'
 
               if (!voted) {
                 return (

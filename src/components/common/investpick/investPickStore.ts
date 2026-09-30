@@ -46,6 +46,13 @@ export type InvestPickState = {
   voting: boolean
   /** 투표 실패 시 서버가 내려준 메시지 (ex. 이미 투표하셨습니다.) */
   voteMessage: string | null
+  /**
+   * 이번 페이지 노출 중에 방금 투표했는지 여부.
+   * true 인 동안은 결과 그래프에서 내가 고른 답만 색을 넣고 나머지는 회색으로 죽인다.
+   * 페이지를 새로 열어(서버가 이미 투표한 상태로 내려주는 경우) 진입했을 때는 계속 false 라서
+   * 양쪽 다 A/B 색이 그대로 들어간다.
+   */
+  justVoted: boolean
 }
 
 const initialState: InvestPickState = {
@@ -54,6 +61,7 @@ const initialState: InvestPickState = {
   error: null,
   voting: false,
   voteMessage: null,
+  justVoted: false,
 }
 
 let state: InvestPickState = initialState
@@ -120,6 +128,7 @@ export async function submitVote(choice: InvestPickChoice): Promise<boolean> {
     setState({
       voting: false,
       voteMessage: null,
+      justVoted: true,
       topic: {
         ...current,
         cntA: result.cntA,
