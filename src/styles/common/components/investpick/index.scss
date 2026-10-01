@@ -699,6 +699,75 @@
     }
   }
 
+  /* vote: 미투표 상태로 진행중 설문을 연 경우 (InvestPickVote 재사용) ------- */
+  &__vote {
+    margin-top: __vw(40);
+    padding: 0;
+    border-radius: 0;
+    background: none;
+
+    // 헤드/참여수/공유하기는 팝업 헤드에서 대신 보여주므로 선택지만 남긴다.
+    .investpick__head,
+    .investpick__meta {
+      display: none;
+    }
+
+    .investpick__options {
+      margin-top: 0;
+    }
+
+    .investpick__option {
+      height: __vw(50);
+      padding: 0 __vw(18);
+      border-radius: __vw(25);
+      background: #f4f5f7;
+    }
+
+    .investpick__option-text {
+      font-size: __vw(15);
+      font-weight: 600;
+      color: #111111;
+    }
+
+    // 투표 직후 상세 재조회 전까지 잠깐 보이는 결과 막대
+    .investpick__result,
+    .investpick__result-fill {
+      height: __vw(50);
+      border-radius: __vw(25);
+    }
+  }
+
+  &__trend-locked {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: __vw(20);
+    margin-top: __vw(16);
+    padding: __vw(24) 0 __vw(28);
+    border-radius: __vw(16);
+    background: #f4f5f7;
+
+    p {
+      font-size: __vw(18);
+      font-weight: 500;
+      color: #333333;
+    }
+  }
+
+  &__trend-locked-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: __vw(54);
+    height: __vw(54);
+    border-radius: 50%;
+    background: #ffffff;
+    font-size: __vw(20);
+    font-weight: 700;
+    color: #c4c7cf;
+  }
+
   /* trend --------------------------------------------------------------- */
   &__trend {
     margin-top: __vw(40);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { ReactSVG } from 'react-svg'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import type { Swiper as SwiperInstance } from 'swiper'
@@ -7,7 +7,8 @@ import 'swiper/css'
 
 import CommonModal from '../CommonModal'
 import { fetchInvestPickTopicDetail } from './api'
-import { INVEST_PICK_CAUTION } from './InvestPickVote'
+import InvestPickVote, { INVEST_PICK_CAUTION } from './InvestPickVote'
+import { getInvestPickState, loadActiveTopic, subscribeInvestPick } from './investPickStore'
 import type { InvestPickDaily, InvestPickTopicDetail } from './types'
 
 import '../../../styles/common/components/investpick/index.scss'
@@ -92,7 +93,15 @@ type InvestPickResultPopupProps = {
   trendNote?: string
   /** 상품 상세 URL 생성기 */
   getProductUrl?: (fid: string, prodNm: string) => string
+  /**
+   * 팝업 안에서 바로 투표 가능 여부. (지난 설문 모아보기에서 진행중인 설문을 연 경우)
+   * true 이고 아직 투표 전이면 결과 대신 투표 선택지(InvestPickVote)를 노출하고,
+   * 투표하면 상세를 다시 조회해 기존 결과 화면으로 전환한다.
+   */
+  allowVote?: boolean
 }
+
+const noop = () => undefined
 
 function formatCount(value: number) {
   return value.toLocaleString('ko-KR')
@@ -106,19 +115,32 @@ export default function InvestPickResultPopup({
   label = '오늘의 투자픽',
   trendNote,
   getProductUrl = buildInvestPickProductUrl,
+  allowVote = false,
 }: InvestPickResultPopupProps) {
   const [detail, setDetail] = useState<InvestPickTopicDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   const [canSlidePrev, setCanSlidePrev] = useState(false)
   const [canSlideNext, setCanSlideNext] = useState(false)
   const swiperRef = useRef<SwiperInstance | null>(null)
+  /** 투표 직후 재조회는 '불러오는 중' 으로 화면을 비우지 않고 조용히 갱신한다. */
+  const silentReloadRef = useRef(false)
+
+  // 팝업 안 투표는 InvestPickVote(전역 스토어)가 처리하므로 진행중인 투자픽 상태를 같이 구독한다.
+  const investPick = useSyncExternalStore(subscribeInvestPick, getInvestPickState, getInvestPickState)
+
+  useEffect(() => {
+    if (open && allowVote) void loadActiveTopic()
+  }, [open, allowVote])
 
   useEffect(() => {
     if (!open || !topicSeq) return undefined
 
     const controller = new AbortController()
-    setLoading(true)
+    const silent = silentReloadRef.current
+    silentReloadRef.current = false
+    if (!silent) setLoading(true)
     setError(null)
 
     fetchInvestPickTopicDetail(topicSeq, controller.signal)
@@ -132,7 +154,7 @@ export default function InvestPickResultPopup({
       })
 
     return () => controller.abort()
-  }, [open, topicSeq])
+  }, [open, topicSeq, reloadKey])
 
   useEffect(() => {
     if (error) onClose()
@@ -155,6 +177,20 @@ export default function InvestPickResultPopup({
   const pickedPct = detail ? (detail.choice === 'B' ? detail.pctB : detail.pctA) : 0
   const isMajority = detail ? pickedPct >= 50 : true
 
+  // 투표 화면은 스토어의 진행중 투자픽과 같은 설문일 때만 노출한다. (다른 설문에 투표되는 것 방지)
+  const isActiveTopic = Boolean(detail) && investPick.topic?.topicSeq === detail?.topicSeq
+  const wantsVote = allowVote && !isEnded && Boolean(detail?.canVote)
+  const waitingActiveTopic = wantsVote && (investPick.phase === 'idle' || investPick.phase === 'loading')
+  const isVoteMode = wantsVote && isActiveTopic
+
+  // 팝업 안에서 투표가 끝나면 상세를 다시 조회해 기존 결과 화면(현황/일일 추이)으로 전환한다.
+  const votedInPopup = isVoteMode && investPick.justVoted
+  useEffect(() => {
+    if (!votedInPopup) return
+    silentReloadRef.current = true
+    setReloadKey((key) => key + 1)
+  }, [votedInPopup])
+
   return (
     <CommonModal
       open={open}
@@ -165,9 +201,9 @@ export default function InvestPickResultPopup({
       contentClassName="investpick-popup__body"
     >
       <div className="investpick-popup">
-        {loading && <p className="investpick-popup__state">불러오는 중입니다.</p>}
+        {(loading || waitingActiveTopic) && <p className="investpick-popup__state">불러오는 중입니다.</p>}
 
-        {!loading && !error && detail && (
+        {!loading && !waitingActiveTopic && !error && detail && (
           <>
             {/* head */}
             <div className="investpick-popup__head">
@@ -180,7 +216,7 @@ export default function InvestPickResultPopup({
                   </>
                 )}
               </div>
-              <h3 className="investpick-popup__title">{headline}</h3>
+              <h3 className="investpick-popup__title">{isVoteMode ? detail.title : headline}</h3>
               <p className="investpick-popup__summary">
                 {isEnded ? (
                   <>
@@ -212,30 +248,60 @@ export default function InvestPickResultPopup({
               </p>
             </div>
 
+            {/* vote: 미투표 상태로 진행중 설문을 연 경우, 현황 대신 투표 선택지를 노출한다 */}
+            {isVoteMode && (
+              <>
+                {/* 헤드/메타는 팝업이 그리므로 CSS 로 숨기고 선택지만 사용한다. onDetail 로 중첩 팝업 방지 */}
+                <InvestPickVote
+                  variant="detail"
+                  showLabel={false}
+                  showCaution={false}
+                  showDetail={false}
+                  onDetail={noop}
+                  className="investpick-popup__vote"
+                />
+
+                <div className="investpick-popup__trend">
+                  <div className="investpick-popup__trend-head">
+                    <h4>일일 민심 추이</h4>
+                  </div>
+                  <div className="investpick-popup__trend-locked">
+                    <span className="investpick-popup__trend-locked-icon" aria-hidden="true">
+                      ?
+                    </span>
+                    <p>투표 시 일별 민심 추이를 볼 수 있어요</p>
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* total */}
-            <div className="investpick-popup__total">
-              <div className="investpick-popup__total-head">
-                <span className="investpick-popup__total-side">
-                  <em>{detail.optionA}</em>
-                  <strong>{detail.pctA}%</strong>
-                </span>
-                <span className="investpick-popup__total-side is-right">
-                  <strong>{detail.pctB}%</strong>
-                  <em>{detail.optionB}</em>
-                </span>
+            {!isVoteMode && (
+              <div className="investpick-popup__total">
+                <div className="investpick-popup__total-head">
+                  <span className="investpick-popup__total-side">
+                    <em>{detail.optionA}</em>
+                    <strong>{detail.pctA}%</strong>
+                  </span>
+                  <span className="investpick-popup__total-side is-right">
+                    <strong>{detail.pctB}%</strong>
+                    <em>{detail.optionB}</em>
+                  </span>
+                </div>
+                <div
+                  className="investpick-popup__total-bar"
+                  role="img"
+                  aria-label={`${detail.optionA} ${detail.pctA}퍼센트, ${detail.optionB} ${detail.pctB}퍼센트`}
+                >
+                  <span className="investpick-popup__total-a" style={{ width: `${detail.pctA}%` }} />
+                  <span className="investpick-popup__total-b" style={{ width: `${detail.pctB}%` }} />
+                </div>
               </div>
-              <div
-                className="investpick-popup__total-bar"
-                role="img"
-                aria-label={`${detail.optionA} ${detail.pctA}퍼센트, ${detail.optionB} ${detail.pctB}퍼센트`}
-              >
-                <span className="investpick-popup__total-a" style={{ width: `${detail.pctA}%` }} />
-                <span className="investpick-popup__total-b" style={{ width: `${detail.pctB}%` }} />
-              </div>
-            </div>
+            )}
 
             {/* callout: 종료된 설문은 투표 참여 여지가 없으므로 노출하지 않는다 */}
             {!isEnded &&
+              !isVoteMode &&
               (detail.canVote ? (
                 <div className="investpick-popup__cta">
                   <span>설문 참여 후 내 민심을 확인 해보세요</span>
@@ -261,7 +327,7 @@ export default function InvestPickResultPopup({
               ))}
 
             {/* trend */}
-            {daily.length > 0 && (
+            {!isVoteMode && daily.length > 0 && (
               <div className="investpick-popup__trend">
                 <div className="investpick-popup__trend-head">
                   <h4>일일 민심 추이</h4>
@@ -324,11 +390,13 @@ export default function InvestPickResultPopup({
               </div>
             )}
 
-            {/* caution */}
-            <p className="investpick-popup__caution">
-              <ReactSVG wrapper="span" className="investpick-popup__caution-icon" src={`${ICON_BASE}/icon-caution.svg`} />
-              <span>{INVEST_PICK_CAUTION}</span>
-            </p>
+            {/* caution: 투표 화면에는 결과가 없으므로 노출하지 않는다 */}
+            {!isVoteMode && (
+              <p className="investpick-popup__caution">
+                <ReactSVG wrapper="span" className="investpick-popup__caution-icon" src={`${ICON_BASE}/icon-caution.svg`} />
+                <span>{INVEST_PICK_CAUTION}</span>
+              </p>
+            )}
 
             {/* links */}
             <div className="investpick-popup__links">
