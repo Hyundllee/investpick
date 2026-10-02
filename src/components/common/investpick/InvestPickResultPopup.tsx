@@ -9,7 +9,7 @@ import CommonModal from '../CommonModal'
 import { fetchInvestPickTopicDetail } from './api'
 import InvestPickVote, { INVEST_PICK_CAUTION } from './InvestPickVote'
 import { getInvestPickState, loadActiveTopic, subscribeInvestPick } from './investPickStore'
-import type { InvestPickDaily, InvestPickTopicDetail } from './types'
+import type { InvestPickDaily, InvestPickGubun, InvestPickTopicDetail } from './types'
 
 import '../../../styles/common/components/investpick/index.scss'
 
@@ -99,6 +99,8 @@ type InvestPickResultPopupProps = {
    * 투표하면 상세를 다시 조회해 기존 결과 화면으로 전환한다.
    */
   allowVote?: boolean
+  /** 팝업 안 투표의 투표 위치 (vote.do gubun). allowVote 는 지난 설문 모아보기 전용이라 기본 R */
+  gubun?: InvestPickGubun
 }
 
 const noop = () => undefined
@@ -116,6 +118,7 @@ export default function InvestPickResultPopup({
   trendNote,
   getProductUrl = buildInvestPickProductUrl,
   allowVote = false,
+  gubun = 'R',
 }: InvestPickResultPopupProps) {
   const [detail, setDetail] = useState<InvestPickTopicDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -258,6 +261,7 @@ export default function InvestPickResultPopup({
                 {/* 헤드/메타는 팝업이 그리므로 CSS 로 숨기고 선택지만 사용한다. onDetail 로 중첩 팝업 방지 */}
                 <InvestPickVote
                   variant="detail"
+                  gubun={gubun}
                   showLabel={false}
                   showCaution={false}
                   showDetail={false}

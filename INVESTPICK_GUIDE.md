@@ -124,13 +124,14 @@ GET /api/v1/kodex/insight/activeTopic
 ### 2-4. 투자픽 투표 저장
 
 ```
-GET /api/v1/kodex/insight/topic/{topicSeq}/vote.do?choice=A
+GET /api/v1/kodex/insight/topic/{topicSeq}/vote.do?choice=A&gubun=M
 ```
 
 | 파라미터 | 필수 | 설명 | 비고 |
 | --- | --- | --- | --- |
 | `topicSeq` | 필수 | 투자픽 일련번호 (path) | |
 | `choice` | 필수 | 답변 선택값 | 기본값 `A`. `A`/`B` 이외는 에러 처리 |
+| `gubun` | 선택 | 투표 위치 | 기본값 `M`. `M` 메인 / `S` 검색 / `P` 상품상세 / `R` 리스트 페이지 |
 
 | 응답 필드 | 설명 |
 | --- | --- |
@@ -144,7 +145,7 @@ GET /api/v1/kodex/insight/topic/{topicSeq}/vote.do?choice=A
 | 화면 | 사용 API |
 | --- | --- |
 | 헤더 검색영역 / 메인 하단 / 상세페이지 투표 영역 | `activeTopic` → 투표 시 `vote.do` |
-| 투표 완료 후 '자세히 보기' 팝업 | `topic/{topicSeq}.do` |
+| 투표 완료 후 '민심 확인하기' 팝업 | `topic/{topicSeq}.do` |
 | 지난 설문 모아보기 목록 | `topics` |
 
 ---
@@ -190,12 +191,31 @@ import { InvestPickVote } from '@/components/common/investpick'
 | prop | 타입 | 기본값 | 설명 |
 | --- | --- | --- | --- |
 | `variant` | `'search' \| 'main' \| 'detail'` | `'main'` | 노출 형태 |
+| `gubun` | `'M' \| 'S' \| 'P' \| 'R'` | variant 기준 | 투표 위치. 투표 API `gubun` / GA `data-gtm-click-location` 에 사용 (`main`→`M`, `search`→`S`, `detail`→`P`) |
 | `label` | `string` | `'오늘의 투자픽'` | 상단 라벨 |
 | `showLabel` | `boolean` | variant 기준 | 라벨 노출 여부 (`main` 은 기본 미노출) |
 | `showCaution` | `boolean` | `true` | 투표 후 유의문구 노출 |
-| `showDetail` | `boolean` | `true` | '자세히 보기' 노출 |
-| `onDetail` | `(topicSeq) => void` | 결과 팝업 오픈 | '자세히 보기' 동작 재정의 |
+| `showDetail` | `boolean` | `true` | '민심 확인하기' 노출 |
+| `onDetail` | `(topicSeq) => void` | 결과 팝업 오픈 | '민심 확인하기' 동작 재정의 |
 | `onShare` | `(topicSeq) => void` | Web Share / 클립보드 복사 | 공유 동작 재정의 |
+
+#### 투표 위치(gubun) / GA
+
+| 위치 | 사용 예 | 투표 API `gubun` | GA `data-gtm-click-location` |
+| --- | --- | --- | --- |
+| 메인 | `<InvestPickVote variant="main" />` | `M` | 메인 |
+| 검색 | `<InvestPickVote variant="search" />` | `S` | 검색 |
+| 상품상세 | `<InvestPickVote variant="detail" />` | `P` | 상품상세 |
+| 리스트(라운지) | `<InvestPickList />` 팝업 안 투표 | `R` | 라운지 |
+
+variant 와 실제 페이지가 다르면 `gubun` 을 직접 넘긴다. (ex. 라운지 페이지의 detail 카드: `<InvestPickVote variant="detail" gubun="R" />`)
+
+'민심 확인하기'(`a.investpick__detail`)에는 아래 GA 속성이 붙는다.
+
+```html
+data-gtm-event-name="button_click" data-gtm-event-category="투자픽" data-gtm-event-action="투자픽상세팝업"
+data-gtm-event-label="민심확인하기" data-gtm-click-location="{메인|검색|상품상세|라운지}"
+```
 
 ### 4-2. 여러 페이지 동시 연동
 
@@ -282,7 +302,7 @@ import { InvestPickList } from '@/components/common/investpick'
 | --- | --- |
 | `icon-pick-off.svg` / `icon-pick-on.svg` | 투표 전 라디오 (미선택 / 선택) |
 | `icon-share.svg` | 공유하기 |
-| `icon-detail-arrow.svg` | 자세히 보기 화살표 (흰색 stroke, 흰 버튼에서는 SCSS 로 `#111` 처리) |
+| `icon-detail-arrow.svg` | 민심 확인하기 화살표 (흰색 stroke, 흰 버튼에서는 SCSS 로 `#111` 처리) |
 | `icon-caution.svg` | 유의문구 ⓘ |
 
 ---
@@ -309,4 +329,4 @@ import { InvestPickList } from '@/components/common/investpick'
 - [x] SCSS 선택자 부모 블록 중첩
 - [x] PNG/JPG 는 SCSS 배경, SVG 는 `ReactSVG` + `/assets/...` 직접 경로
 - [x] 헤더/메인/상세 투표 영역이 전역 스토어로 동시 연동
-- [x] 투표 전 → 투표 후 → 자세히 보기 팝업 흐름 동작 확인
+- [x] 투표 전 → 투표 후 → 민심 확인하기 팝업 흐름 동작 확인

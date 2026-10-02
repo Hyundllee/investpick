@@ -145,6 +145,7 @@ export default function InvestPickList({
           open={popupTopicSeq !== null}
           topicSeq={popupTopicSeq ?? ''}
           allowVote={rows.find((row) => row.topicSeq === popupTopicSeq)?.status === 'RUNNING'}
+          gubun="R"
           onClose={() => setPopupTopicSeq(null)}
         />
       )}

@@ -12,7 +12,7 @@ import {
   submitVote,
   subscribeInvestPick,
 } from './investPickStore'
-import type { InvestPickChoice } from './types'
+import type { InvestPickChoice, InvestPickGubun } from './types'
 
 export function useInvestPick() {
   const state = useSyncExternalStore(subscribeInvestPick, getInvestPickState, getInvestPickState)
@@ -21,7 +21,7 @@ export function useInvestPick() {
     void loadActiveTopic()
   }, [])
 
-  const vote = useCallback((choice: InvestPickChoice) => submitVote(choice), [])
+  const vote = useCallback((choice: InvestPickChoice, gubun?: InvestPickGubun) => submitVote(choice, gubun), [])
   const reload = useCallback(() => loadActiveTopic(true), [])
 
   const { topic } = state

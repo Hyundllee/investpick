@@ -30,6 +30,7 @@ export type {
   InvestPickActiveTopic,
   InvestPickChoice,
   InvestPickDaily,
+  InvestPickGubun,
   InvestPickStatus,
   InvestPickTopicDetail,
   InvestPickTopicSummary,

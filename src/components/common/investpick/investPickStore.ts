@@ -7,7 +7,7 @@
  * ========================================================================= */
 
 import { fetchInvestPickActiveTopic, requestInvestPickVote } from './api'
-import type { InvestPickActiveTopic, InvestPickChoice } from './types'
+import type { InvestPickActiveTopic, InvestPickChoice, InvestPickGubun } from './types'
 
 /**
  * 새로고침 후 activeTopic 을 다시 조회하면 canVote 는 false 로 잘 내려오는데
@@ -108,15 +108,15 @@ export function loadActiveTopic(force = false): Promise<void> {
   return inflight
 }
 
-/** 투표 저장. 성공 시 스토어의 집계값을 응답으로 갱신한다. */
-export async function submitVote(choice: InvestPickChoice): Promise<boolean> {
+/** 투표 저장. gubun 은 투표 위치(M/S/P/R). 성공 시 스토어의 집계값을 응답으로 갱신한다. */
+export async function submitVote(choice: InvestPickChoice, gubun: InvestPickGubun = 'M'): Promise<boolean> {
   const current = state.topic
   if (!current || state.voting) return false
 
   setState({ voting: true, voteMessage: null })
 
   try {
-    const result = await requestInvestPickVote(current.topicSeq, choice)
+    const result = await requestInvestPickVote(current.topicSeq, choice, gubun)
 
     if (!result.success) {
       setState({ voting: false, voteMessage: result.message ?? '투표에 실패했습니다.' })

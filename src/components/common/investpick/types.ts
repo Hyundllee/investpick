@@ -4,7 +4,7 @@
  *  - 투자픽 목록 API      GET /api/v1/kodex/insight/topics
  *  - 투자픽 상세 API      GET /api/v1/kodex/insight/topic/{topicSeq}.do
  *  - 진행중인 투자픽정보  GET /api/v1/kodex/insight/activeTopic
- *  - 투자픽 투표          GET /api/v1/kodex/insight/topic/{topicSeq}/vote.do?choice=A
+ *  - 투자픽 투표          GET /api/v1/kodex/insight/topic/{topicSeq}/vote.do?choice=A&gubun=M
  * ========================================================================= */
 
 /** 답변 선택값. A or B 이외의 값은 서버에서 에러처리된다. */
@@ -15,6 +15,9 @@ export type InvestPickStatus = 'RUNNING' | 'ENDED' | 'WAITING'
 
 /** 투표 영역 노출 형태 */
 export type InvestPickVariant = 'search' | 'main' | 'detail'
+
+/** 투표 위치 구분값 (vote.do 의 gubun). M: 메인, S: 검색, P: 상품상세, R: 리스트 페이지 */
+export type InvestPickGubun = 'M' | 'S' | 'P' | 'R'
 
 /* ---------------------------------------------------------------- 투자픽 목록 */
 

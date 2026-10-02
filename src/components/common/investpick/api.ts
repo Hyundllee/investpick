@@ -15,6 +15,7 @@ import axios from 'axios'
 import type {
   InvestPickActiveTopic,
   InvestPickChoice,
+  InvestPickGubun,
   InvestPickTopicDetail,
   InvestPickTopicsParams,
   InvestPickTopicsResponse,
@@ -127,16 +128,17 @@ export async function fetchInvestPickActiveTopic(signal?: AbortSignal): Promise<
   return data
 }
 
-/** 투자픽 투표 저장 */
+/** 투자픽 투표 저장. gubun: 투표 위치 (default M) */
 export async function requestInvestPickVote(
   topicSeq: string | number,
   choice: InvestPickChoice,
+  gubun: InvestPickGubun = 'M',
   signal?: AbortSignal,
 ): Promise<InvestPickVoteResponse> {
   if (isInvestPickMockEnabled()) return (await mockApi()).vote(topicSeq, choice)
 
   const { data } = await client.get<InvestPickVoteResponse>(ENDPOINT.vote(topicSeq), {
-    params: { choice },
+    params: { choice, gubun },
     signal,
   })
   return data
