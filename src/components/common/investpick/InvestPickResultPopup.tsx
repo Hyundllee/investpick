@@ -17,7 +17,7 @@ const ICON_BASE = '/assets/images/kodex/common/investpick'
 
 /** 일별 추이가 이 개수 이상이면 전체 나열 대신 화살표로 넘기는 슬라이드(Swiper) 형태로 전환한다. */
 const TREND_SLIDER_THRESHOLD = 7
-/** 슬라이드 모드에서 한 화면에 보이는 컬럼 수. */
+/** 슬라이드 모드에서 한 화면에 보이는 컬럼 수. 데이터가 이보다 적으면 뒤 날짜(? 아이콘)로 이 개수까지 채운다. */
 const TREND_SLIDER_VISIBLE_COUNT = 5
 
 /** voteYmd(예: "20260826") 에서 월/일만 뽑는다. 형식이 다르면 원본을 그대로 돌려준다. */
@@ -166,10 +166,14 @@ export default function InvestPickResultPopup({
   const maxPct = availableDaily.reduce((max, item) => Math.max(max, item.pctA, item.pctB), 0) || 100
 
   const isTrendSlider = daily.length >= TREND_SLIDER_THRESHOLD
-  // 슬라이드 첫 노출 시 오늘이 맨 앞에 오도록 하되, 오늘이 뒤쪽에 몰려 있어 화면 끝에
-  // 공백 칸이 생기는 경우(ex. 투표기간 마지막 날이 오늘인 경우)엔 꽉 채워지도록 당겨온다.
-  const maxStartIndex = Math.max(0, daily.length - TREND_SLIDER_VISIBLE_COUNT)
-  const initialSlideIndex = Math.min(Math.max(todayIndex, 0), maxStartIndex)
+  // 슬라이드는 데이터가 있는(available) 마지막 날까지만 그려 맨 오른쪽 칸이 막대 그래프가 되게 하고,
+  // 그 개수가 한 화면보다 적을 때만 뒤 날짜(? 아이콘)로 채워 한 화면을 맞춘다.
+  // ex) 데이터 2일 → 막대 2 + ? 3 / 데이터 3일 → 막대 3 + ? 2 / 데이터 7일 → 막대 7 (첫 화면은 최근 5일)
+  // (findLastIndex 는 ES2023 이라 reduce 로 구한다.)
+  const dataEndIndex = daily.reduce((end, item, index) => (item.available ? index + 1 : end), 0)
+  const trendSlides = daily.slice(0, Math.max(dataEndIndex, TREND_SLIDER_VISIBLE_COUNT))
+  // 첫 노출은 최근 데이터가 맨 오른쪽에 오도록 끝에 맞춘다. 이전 날짜로 넘겼을 때만 다음(오른쪽) 화살표가 활성화된다.
+  const initialSlideIndex = Math.max(0, trendSlides.length - TREND_SLIDER_VISIBLE_COUNT)
 
   // 응답은 대문자로 내려온다(InvestPickStatus)고 하나, 표기 방어를 위해 대소문자 무관하게 비교한다.
   const isEnded = (detail?.status ?? '').toString().toUpperCase() === 'ENDED'
@@ -346,8 +350,9 @@ export default function InvestPickResultPopup({
                       <ReactSVG wrapper="span" src={`${ICON_BASE}/icon-slide-left.svg`} />
                     </button>
 
+                    {/* initialSlide 는 생성 시점에만 적용되므로, 슬라이드 개수가 바뀌면 다시 만들어 최근 날짜로 맞춘다 */}
                     <Swiper
-                      key={detail.topicSeq}
+                      key={`${detail.topicSeq}-${trendSlides.length}`}
                       className="investpick-popup__chart-swiper"
                       slidesPerView={TREND_SLIDER_VISIBLE_COUNT}
                       initialSlide={initialSlideIndex}
@@ -361,7 +366,7 @@ export default function InvestPickResultPopup({
                         setCanSlideNext(!swiper.isEnd)
                       }}
                     >
-                      {daily.map((item, index) => (
+                      {trendSlides.map((item, index) => (
                         <SwiperSlide key={`${item.dayLabel}-${index}`} className={index === todayIndex ? 'is-today' : ''}>
                           <DailyChartColumn item={item} hasData={item.available} maxPct={maxPct} />
                         </SwiperSlide>
