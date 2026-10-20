@@ -3,6 +3,7 @@ import { ReactSVG } from 'react-svg'
 
 import { fetchInvestPickTopics } from './api'
 import { INVEST_PICK_CAUTION } from './InvestPickVote'
+import InvestPickResultPopup from './InvestPickResultPopup'
 import type { InvestPickTopicSummary } from './types'
 
 import '../../../styles/common/components/investpick/index.scss'
@@ -14,7 +15,7 @@ type InvestPickListProps = {
   title?: string
   /** 페이지 당 행 개수 (목록 API default 6) */
   pageRows?: number
-  /** 행 클릭 시 동작 */
+  /** 행 클릭 시 동작 재정의. 미지정 시 해당 topicSeq 로 결과 팝업을 연다. */
   onSelect?: (topic: InvestPickTopicSummary) => void
   className?: string
 }
@@ -30,23 +31,25 @@ export default function InvestPickList({
   className = '',
 }: InvestPickListProps) {
   const [rows, setRows] = useState<InvestPickTopicSummary[]>([])
-  const [totalCnt, setTotalCnt] = useState(0)
+  const [totcnt, setTotcnt] = useState(0)
   const [pageNo, setPageNo] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [popupTopicSeq, setPopupTopicSeq] = useState<string | null>(null)
   const loadedRef = useRef(false)
 
   const load = useCallback(
     async (page: number, append: boolean) => {
       setLoading(true)
+      setError(null)
 
       try {
         const data = await fetchInvestPickTopics({ pageNo: page, pageRows })
-        setTotalCnt(data.totalCnt)
+        setTotcnt(data.totcnt)
         setRows((prev) => (append ? [...prev, ...data.list] : data.list))
         setPageNo(page)
       } catch (cause: unknown) {
-        // 실패해도 화면에 영역을 만들지 않는다. 원인 파악용으로 콘솔에만 남긴다.
-        console.error('[investpick] 목록 조회 실패', cause)
+        setError(cause instanceof Error ? cause.message : '목록을 불러오지 못했습니다.')
       } finally {
         setLoading(false)
       }
@@ -60,17 +63,24 @@ export default function InvestPickList({
     void load(1, false)
   }, [load])
 
-  const hasMore = rows.length > 0 && rows.length < totalCnt
+  const hasMore = rows.length > 0 && rows.length < totcnt
 
-  // 조회 실패 / 로딩 중 / 결과 없음 -> 영역 자체를 렌더링하지 않는다.
-  if (rows.length === 0) return null
+  const handleSelect = (row: InvestPickTopicSummary) => {
+    if (onSelect) {
+      onSelect(row)
+      return
+    }
+    setPopupTopicSeq(row.topicSeq)
+  }
+
+  if (error && rows.length === 0) return null
 
   return (
     <section className={`investpick-list ${className}`}>
       {/* head */}
       <div className="investpick-list__head">
         <h3 className="investpick-list__title">{title}</h3>
-        <span className="investpick-list__total">총 {formatCount(totalCnt)}개</span>
+        <span className="investpick-list__total">총 {formatCount(totcnt)}개</span>
       </div>
 
       {/* table head */}
@@ -87,7 +97,7 @@ export default function InvestPickList({
           const isRunning = row.status === 'RUNNING'
           return (
             <li key={row.topicSeq}>
-              <button type="button" className="investpick-list__row" onClick={() => onSelect?.(row)}>
+              <button type="button" className="investpick-list__row" onClick={() => handleSelect(row)}>
                 <span className="investpick-list__col investpick-list__col--round">
                   <em className={`investpick-list__badge ${isRunning ? 'is-running' : ''}`}>
                     {isRunning ? '진행 중' : row.roundNm}
@@ -113,6 +123,8 @@ export default function InvestPickList({
         })}
       </ul>
 
+      {!loading && rows.length === 0 && <p className="investpick-list__state">등록된 설문이 없습니다.</p>}
+
       {/* caution */}
       <p className="investpick-list__caution">
         <ReactSVG wrapper="span" className="investpick-list__caution-icon" src={`${ICON_BASE}/icon-caution.svg`} />
@@ -126,6 +138,16 @@ export default function InvestPickList({
             더보기 <i aria-hidden="true">+</i>
           </button>
         </div>
+      )}
+
+      {!onSelect && (
+        <InvestPickResultPopup
+          open={popupTopicSeq !== null}
+          topicSeq={popupTopicSeq ?? ''}
+          allowVote={rows.find((row) => row.topicSeq === popupTopicSeq)?.status === 'RUNNING'}
+          gubun="R"
+          onClose={() => setPopupTopicSeq(null)}
+        />
       )}
     </section>
   )
