@@ -14,10 +14,7 @@
   &__inner {
     display: flex;
     flex-wrap: wrap;
-    // center로 두면 head(라벨+타이틀 2줄) 기준 세로 중앙이라 meta(공유하기 등)가
-    // 라벨과 타이틀 사이 어중간한 위치에 뜬다. head 의 마지막 줄인 타이틀과 맞도록
-    // 하단 기준으로 정렬한다.
-    align-items: flex-end;
+    align-items: center;
     width: 100%;
   }
 
@@ -338,21 +335,6 @@
     animation: investpick-notice 4s ease forwards;
   }
 
-  &__empty {
-    font-size: __vw(14);
-    font-weight: 400;
-    color: #888888;
-  }
-
-  /* 로딩 스켈레톤 */
-  &.is-loading {
-    min-height: __vw(100);
-    border-radius: __vw(16);
-    background: linear-gradient(90deg, #f2f3f5 25%, #e9eaee 37%, #f2f3f5 63%);
-    background-size: 400% 100%;
-    animation: investpick-skeleton 1.4s ease infinite;
-  }
-
   /* variant : search (헤더 검색영역) ------------------------------------- */
   &--search {
     padding: __vw(28) __vw(40) __vw(32);
@@ -449,16 +431,6 @@
   }
 }
 
-@keyframes investpick-skeleton {
-  0% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0 50%;
-  }
-}
-
 @keyframes investpick-notice {
   0% {
     opacity: 0;
@@ -485,14 +457,6 @@
     border-radius: __vw(24);
   }
 
-  &__state {
-    padding: __vw(60) 0;
-    font-size: __vw(15);
-    font-weight: 400;
-    color: #888888;
-    text-align: center;
-  }
-
   /* head ---------------------------------------------------------------- */
   &__head {
     display: flex;
@@ -500,33 +464,10 @@
     gap: __vw(8);
   }
 
-  &__label-row {
-    display: flex;
-    align-items: center;
-    gap: __vw(8);
-  }
-
   &__label {
     font-size: __vw(14);
     font-weight: 600;
     color: #1454ff;
-  }
-
-  &__badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0 __vw(10);
-    height: __vw(24);
-    border-radius: __vw(12);
-    background: #eef4ff;
-    font-size: __vw(13);
-    font-weight: 600;
-    color: #1454ff;
-
-    &.is-ended {
-      background: #ededef;
-      color: #888888;
-    }
   }
 
   &__title {
@@ -642,130 +583,10 @@
     }
 
     &-icon {
-      display: flex;
       flex: 0 0 auto;
-
-      > span {
-        display: flex;
-      }
-
-      svg {
-        width: __vw(24);
-        height: auto;
-      }
+      font-size: __vw(20);
+      line-height: 1;
     }
-  }
-
-  /* cta: 미투표 상태(canVote) 안내 박스 ----------------------------------- */
-  &__cta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: __vw(16);
-    margin-top: __vw(24);
-    padding: __vw(22) __vw(26);
-    border-radius: __vw(12);
-    background: #f4f5f7;
-    font-size: __vw(15);
-    font-weight: 400;
-    color: #333333;
-  }
-
-  &__cta-button {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: __vw(8);
-    height: __vw(38);
-    padding: 0 __vw(18);
-    border: __vw(1) solid #d9dbe0;
-    border-radius: __vw(19);
-    background: #ffffff;
-    font-size: __vw(14);
-    font-weight: 600;
-    color: #111111;
-
-    &:hover {
-      border-color: #111111;
-    }
-
-    svg {
-      width: __vw(6);
-      height: __vw(10);
-
-      path {
-        stroke: #111111;
-      }
-    }
-  }
-
-  /* vote: 미투표 상태로 진행중 설문을 연 경우 (InvestPickVote 재사용) ------- */
-  &__vote {
-    margin-top: __vw(40);
-    padding: 0;
-    border-radius: 0;
-    background: none;
-
-    // 헤드/참여수/공유하기는 팝업 헤드에서 대신 보여주므로 선택지만 남긴다.
-    .investpick__head,
-    .investpick__meta {
-      display: none;
-    }
-
-    .investpick__options {
-      margin-top: 0;
-    }
-
-    .investpick__option {
-      height: __vw(50);
-      padding: 0 __vw(18);
-      border-radius: __vw(25);
-      background: #f4f5f7;
-    }
-
-    .investpick__option-text {
-      font-size: __vw(15);
-      font-weight: 600;
-      color: #111111;
-    }
-
-    // 투표 직후 상세 재조회 전까지 잠깐 보이는 결과 막대
-    .investpick__result,
-    .investpick__result-fill {
-      height: __vw(50);
-      border-radius: __vw(25);
-    }
-  }
-
-  &__trend-locked {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: __vw(20);
-    margin-top: __vw(16);
-    padding: __vw(24) 0 __vw(28);
-    border-radius: __vw(16);
-    background: #f4f5f7;
-
-    p {
-      font-size: __vw(18);
-      font-weight: 500;
-      color: #333333;
-    }
-  }
-
-  &__trend-locked-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: __vw(54);
-    height: __vw(54);
-    border-radius: 50%;
-    background: #ffffff;
-    font-size: __vw(20);
-    font-weight: 700;
-    color: #c4c7cf;
   }
 
   /* trend --------------------------------------------------------------- */
@@ -791,56 +612,6 @@
     }
   }
 
-  &__chart-wrap {
-    display: flex;
-    align-items: center;
-    gap: __vw(4);
-    margin-top: __vw(40);
-  }
-
-  &__chart-arrow {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    width: __vw(30);
-    height: __vw(30);
-    padding: 0;
-    border: 0;
-    background: none;
-    cursor: pointer;
-
-    &:disabled {
-      opacity: 0.4;
-      cursor: default;
-    }
-  }
-
-  // Swiper 모드 (daily 7개 이상, TREND_SLIDER_THRESHOLD 참고)
-  &__chart-swiper {
-    flex: 1 1 auto;
-    min-width: 0;
-    // 막대 위 %는 막대 높이 기준 absolute(bottom:100%)라, 100% 높이 막대는 라벨이
-    // 튀어나간다. Swiper 루트(.swiper)의 기본 overflow:hidden 에 잘리지 않도록
-    // 라벨 높이만큼 위쪽 여백을 미리 확보해둔다.
-    padding-top: __vw(40);
-
-    .swiper-slide {
-      display: flex;
-      height: auto;
-      flex-direction: column;
-      align-items: center;
-
-      &.is-today {
-        .investpick-popup__chart-label {
-          font-weight: 600;
-          color: #111111;
-        }
-      }
-    }
-  }
-
-  // 정적 나열 모드 (daily 7개 미만)
   &__chart {
     display: flex;
     align-items: flex-end;
@@ -858,24 +629,6 @@
           color: #111111;
         }
       }
-    }
-  }
-
-  &__chart-empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: __vw(120);
-    border-bottom: __vw(1) solid #e0e1e5;
-
-    span {
-      display: flex;
-    }
-
-    svg {
-      width: __vw(40);
-      height: __vw(40);
     }
   }
 
@@ -1172,14 +925,6 @@
         height: __vw(16);
       }
     }
-  }
-
-  &__state {
-    padding: __vw(50) 0;
-    font-size: __vw(15);
-    font-weight: 400;
-    color: #888888;
-    text-align: center;
   }
 
   &__more {

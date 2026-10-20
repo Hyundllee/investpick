@@ -1,29 +1,13 @@
 import { useState } from 'react'
-import type { MouseEvent } from 'react'
 import { ReactSVG } from 'react-svg'
 
 import InvestPickResultPopup from './InvestPickResultPopup'
 import { useInvestPick } from './useInvestPick'
-import type { InvestPickChoice, InvestPickGubun, InvestPickVariant } from './types'
+import type { InvestPickChoice, InvestPickVariant } from './types'
 
 import '../../../styles/common/components/investpick/index.scss'
 
 const ICON_BASE = '/assets/images/kodex/common/investpick'
-
-/** gubun 미지정 시 variant 기준 투표 위치 (매핑에 없는 variant 는 기본값 M) */
-const GUBUN_BY_VARIANT: Partial<Record<InvestPickVariant, InvestPickGubun>> = {
-  main: 'M',
-  search: 'S',
-  detail: 'P',
-}
-
-/** GA data-gtm-click-location 값 (투표 위치) */
-const GTM_LOCATION_BY_GUBUN: Record<InvestPickGubun, string> = {
-  M: '메인',
-  S: '검색',
-  P: '상품상세',
-  R: '라운지',
-}
 
 export const INVEST_PICK_CAUTION =
   '본 투자픽 결과는 홈페이지 이용자가 설문에 응답한 결과 데이터를 단순히 보여주는 것으로, 삼성자산운용의 제안 또는 투자권유 등에 해당하지 않습니다.'
@@ -36,21 +20,15 @@ type InvestPickVoteProps = {
    * - detail: 상세페이지 카드형
    */
   variant?: InvestPickVariant
-  /**
-   * 투표 위치. 투표 API(gubun) / GA(click-location) 에 사용한다.
-   * M: 메인, S: 검색, P: 상품상세, R: 리스트(라운지)
-   * 미지정 시 variant 기준 (main → M, search → S, detail → P)
-   */
-  gubun?: InvestPickGubun
   /** 카테고리 라벨 (main 형태에서는 노출하지 않는다) */
   label?: string
   /** 라벨 노출 여부. 미지정 시 variant 기준으로 결정 */
   showLabel?: boolean
   /** 투표 완료 후 유의문구 노출 여부 */
   showCaution?: boolean
-  /** '민심 확인하기' 노출 여부 */
+  /** '자세히 보기' 노출 여부 */
   showDetail?: boolean
-  /** '민심 확인하기' 동작 재정의. 미지정 시 결과 팝업을 연다. */
+  /** '자세히 보기' 동작 재정의. 미지정 시 결과 팝업을 연다. */
   onDetail?: (topicSeq: string) => void
   /** 공유하기 동작 재정의 */
   onShare?: (topicSeq: string) => void
@@ -63,7 +41,6 @@ function formatCount(value: number) {
 
 export default function InvestPickVote({
   variant = 'main',
-  gubun,
   label = '오늘의 투자픽',
   showLabel,
   showCaution = true,
@@ -72,19 +49,14 @@ export default function InvestPickVote({
   onShare,
   className = '',
 }: InvestPickVoteProps) {
-  const { phase, topic, voting, voteMessage, voted, justVoted, vote, clearVoteMessage } = useInvestPick()
+  const { phase, topic, voting, voteMessage, voted, vote, clearVoteMessage } = useInvestPick()
   const [popupOpen, setPopupOpen] = useState(false)
 
   const withLabel = showLabel ?? variant !== 'main'
-  const voteGubun = gubun ?? GUBUN_BY_VARIANT[variant] ?? 'M'
 
-  if (phase === 'loading' || phase === 'idle') {
-    return <div className={`investpick investpick--${variant} is-loading ${className}`} aria-busy="true" />
-  }
-
-  if (phase === 'error' || !topic) {
-    return null
-  }
+  // 조회 실패 / 로딩 중에는 아무것도 렌더링하지 않는다.
+  // (에러 문구나 스켈레톤 없이 영역 자체가 잡히지 않도록 한다)
+  if (phase !== 'ready' || !topic) return null
 
   const options = [
     { key: 'A' as InvestPickChoice, text: topic.optionA, pct: topic.pctA },
@@ -93,7 +65,7 @@ export default function InvestPickVote({
 
   const handleVote = (choice: InvestPickChoice) => {
     if (voting || voted) return
-    void vote(choice, voteGubun)
+    void vote(choice)
   }
 
   const handleShare = () => {
@@ -114,8 +86,7 @@ export default function InvestPickVote({
     }
   }
 
-  const handleDetail = (event: MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault()
+  const handleDetail = () => {
     if (onDetail) {
       onDetail(topic.topicSeq)
       return
@@ -137,7 +108,7 @@ export default function InvestPickVote({
           <div className="investpick__options">
             {options.map(({ key, text, pct }) => {
               const isPicked = topic.choice === key
-              const tone = voted && justVoted && !isPicked ? 'gray' : key === 'A' ? 'blue' : 'red'
+              const tone = voted ? (isPicked ? (key === 'A' ? 'blue' : 'red') : 'gray') : key === 'A' ? 'blue' : 'red'
 
               if (!voted) {
                 return (
@@ -195,20 +166,10 @@ export default function InvestPickVote({
 
           {/* detail */}
           {voted && showDetail && (
-            <a
-              href="#"
-              role="button"
-              className="investpick__detail"
-              onClick={handleDetail}
-              data-gtm-event-name="button_click"
-              data-gtm-event-category="투자픽"
-              data-gtm-event-action="투자픽상세팝업"
-              data-gtm-event-label="민심확인하기"
-              data-gtm-click-location={GTM_LOCATION_BY_GUBUN[voteGubun]}
-            >
-              민심 확인하기
+            <button type="button" className="investpick__detail" onClick={handleDetail}>
+              자세히 보기
               <ReactSVG wrapper="span" className="investpick__detail-icon" src={`${ICON_BASE}/icon-detail-arrow.svg`} />
-            </a>
+            </button>
           )}
 
           {/* caution */}
